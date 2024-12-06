@@ -15,8 +15,8 @@ token := appserver.NewToken(&Config{
     Host:            "https://bucket-name.oss-cn-hangzhou.aliyuncs.com",
     Directory:       "user-dir-prefix/",
     ExpireSecond:    600,
-	// Only the PutObject, PostObject, and CompleteMultipartUpload support Callback
-	// Error 502 occurs when using https
+    // Only the PutObject, PostObject, and CompleteMultipartUpload support Callback
+    // Error 502 occurs when using https
     CallbackUrl:     "http://domain.com/oss/callback", 
 })
 postToken, _ := token.Generate()
