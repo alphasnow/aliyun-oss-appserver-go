@@ -6,6 +6,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -61,30 +62,38 @@ func NewAliyunOSSCallback(req *http.Request) *AliyunOSSCallback {
 	return &AliyunOSSCallback{req: req}
 }
 
-func (a *AliyunOSSCallback) VerifySignature() error {
+func (a *AliyunOSSCallback) VerifySignature() (*CallbackBody, error) {
 	bodyContent, err := io.ReadAll(a.req.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer a.req.Body.Close()
 	byteMd5, err := GetMD5FromNewAuthString(bodyContent, a.req.URL.Path, a.req.URL.RawQuery)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	publicKeyURLBase64 := a.req.Header.Get(PubKeyUrlHeader)
 	bytePublicKey, err := GetPublicKey(publicKeyURLBase64)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	strAuthorizationBase64 := a.req.Header.Get(AuthorizationHeader)
 	authorization, err := GetAuthorization(strAuthorizationBase64)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return VerifySignature(bytePublicKey, byteMd5, authorization)
+	if err = VerifySignature(bytePublicKey, byteMd5, authorization); err != nil {
+		return nil, err
+	}
+
+	callbackBody := new(CallbackBody)
+	if err = json.Unmarshal(bodyContent, callbackBody); err != nil {
+		return nil, err
+	}
+	return callbackBody, nil
 }
 
 func VerifySignature(bytePublicKey []byte, byteMd5 []byte, authorization []byte) error {

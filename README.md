@@ -35,7 +35,7 @@ postTokenJson, _ := json.Marshal(postToken)
 ## Callback verify
 ```go
 aliyunOSSCallback := appserver.NewAliyunOSSCallback(request)
-err := aliyunOSSCallback.VerifySignature()
+callbackBody,err := aliyunOSSCallback.VerifySignature()
 //{
 //    "bucket": "bucket-name",
 //    "object": "user-dir-prefix/image.jpg",
