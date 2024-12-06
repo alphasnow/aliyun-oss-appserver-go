@@ -31,7 +31,16 @@ postTokenJson, _ := json.Marshal(postToken)
 //    "directory": "user-dir-prefix/"
 //}
 ```
-
+## Upload file
+```bash
+curl --location "https://bucket-name.oss-cn-hangzhou.aliyuncs.com" \
+--form 'key="user-dir-prefix/${filename}"' \
+--form 'policy="eyJleHBpcmF0aW9uIjoiMjAyNS0wMS0wMVQwMDowMDowMFoiLCJjb25kaXRpb25zIjpbWyJzdGFydHMtd2l0aCIsIiRrZXkiLCJ1c2VyLWRpci1wcmVmaXgvIl1dfQ=="' \
+--form 'OSSAccessKeyId="yourAccessKeyId"' \
+--form 'callback="eyJjYWxsYmFja1VybCI6Imh0dHA6Ly9kb21haW4uY29tL29zcy9jYWxsYmFjayIsImNhbGxiYWNrQm9keSI6IntcImJ1Y2tldFwiOiR7YnVja2V0fSxcIm9iamVjdFwiOiR7b2JqZWN0fSxcImV0YWdcIjoke2V0YWd9LFwic2l6ZVwiOiR7c2l6ZX0sXCJtaW1lVHlwZVwiOiR7bWltZVR5cGV9LFwiaW1hZ2VJbmZvXCI6e1wiaGVpZ2h0XCI6JHtpbWFnZUluZm8uaGVpZ2h0fSxcIndpZHRoXCI6JHtpbWFnZUluZm8ud2lkdGh9LFwiZm9ybWF0XCI6JHtpbWFnZUluZm8uZm9ybWF0fX0sXCJjcmM2NFwiOiR7Y3JjNjR9LFwiY29udGVudE1kNVwiOiR7Y29udGVudE1kNX0sXCJ2cGNJZFwiOiR7dnBjSWR9LFwiY2xpZW50SXBcIjoke2NsaWVudElwfSxcInJlcUlkXCI6JHtyZXFJZH0sXCJvcGVyYXRpb25cIjoke29wZXJhdGlvbn19IiwiY2FsbGJhY2tCb2R5VHlwZSI6ImFwcGxpY2F0aW9uL2pzb24ifQ=="' \
+--form 'signature="uXL82wU5IGCd7vcZKX9gua5TUJs="' \
+--form 'file=@"~/Downloads/image.jpg"'
+```
 ## Callback verify
 ```go
 aliyunOSSCallback := appserver.NewAliyunOSSCallback(request)
