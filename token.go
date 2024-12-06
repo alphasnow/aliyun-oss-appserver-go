@@ -53,7 +53,7 @@ func newCallback(config *Config) *Callback {
 	cp.CallbackUrl = config.CallbackUrl
 
 	if config.CallbackBody != "" {
-		cp.CallbackBody = config.CallbackUrl
+		cp.CallbackBody = config.CallbackBody
 	} else {
 		cp.CallbackBody = CallbackBodyParam
 	}

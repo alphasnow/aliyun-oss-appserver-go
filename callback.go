@@ -50,118 +50,43 @@ type ImageInfo struct {
 	Format string `json:"format"`
 }
 
-const PubKeyUrlHeader = "x-oss-pub-key-url"
-const AuthorizationHeader = "authorization"
+const PubKeyUrlHeader = "X-Oss-Pub-Key-Url"
+const AuthorizationHeader = "Authorization"
 
-// GetPublicKey : Get PublicKey bytes from Request.URL
-func GetPublicKey(r *http.Request) ([]byte, error) {
-	var bytePublicKey []byte
-	// get PublicKey URL
-	publicKeyURLBase64 := r.Header.Get(PubKeyUrlHeader)
-	if publicKeyURLBase64 == "" {
-		// fmt.Println("GetPublicKey from Request header failed :  No x-oss-pub-key-url field. ")
-		return nil, errors.New("no x-oss-pub-key-url field in Request header ")
-	}
-	publicKeyURL, err := base64.StdEncoding.DecodeString(publicKeyURLBase64)
-	if err != nil {
-		return nil, err
-	}
-	// fmt.Printf("publicKeyURL={%s}\n", publicKeyURL)
-
-	// get PublicKey Content from URL
-	responsePublicKeyURL, err := http.Get(string(publicKeyURL))
-	if err != nil {
-		// fmt.Printf("Get PublicKey Content from URL failed : %s \n", err.Error())
-		return nil, err
-	}
-	bytePublicKey, err = io.ReadAll(responsePublicKeyURL.Body)
-	if err != nil {
-		// fmt.Printf("Read PublicKey Content from URL failed : %s \n", err.Error())
-		return bytePublicKey, err
-	}
-	defer responsePublicKeyURL.Body.Close()
-
-	// fmt.Printf("publicKey={%s}\n", bytePublicKey)
-	return bytePublicKey, nil
+type AliyunOSSCallback struct {
+	req *http.Request
 }
 
-// GetAuthorization : decode from Base64String
-func GetAuthorization(r *http.Request) ([]byte, error) {
-	var byteAuthorization []byte
-	var err error
-	// Get Authorization bytes : decode from Base64String
-	strAuthorizationBase64 := r.Header.Get(AuthorizationHeader)
-	if strAuthorizationBase64 == "" {
-		//fmt.Println("Failed to get authorization field from request header. ")
-		return nil, errors.New("no authorization field in Request header")
-	}
-
-	byteAuthorization, err = base64.StdEncoding.DecodeString(strAuthorizationBase64)
-	if err != nil {
-		return nil, err
-	}
-	return byteAuthorization, nil
+func NewAliyunOSSCallback(req *http.Request) *AliyunOSSCallback {
+	return &AliyunOSSCallback{req: req}
 }
 
-// GetMD5FromNewAuthString : Get MD5 bytes from Newly Constructed Authrization String.
-func GetMD5FromNewAuthString(r *http.Request) ([]byte, error) {
-	var byteMD5 []byte
-	// Construct the New Auth String from URI+Query+Body
-	bodyContent, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
+func (a *AliyunOSSCallback) VerifySignature() error {
+	bodyContent, err := io.ReadAll(a.req.Body)
 	if err != nil {
-		// fmt.Printf("Read Request Body failed : %s \n", err.Error())
-		return nil, err
+		return err
 	}
-	strCallbackBody := string(bodyContent)
-	// fmt.Printf("r.URL.RawPath={%s}, r.URL.Query()={%s}, strCallbackBody={%s}\n", r.URL.RawPath, r.URL.Query(), strCallbackBody)
-	strURLPathDecode, errUnescape := unescapePath(r.URL.Path, encodePathSegment) //url.PathUnescape(r.URL.Path) for Golang v1.8.2+
-	if errUnescape != nil {
-		// fmt.Printf("url.PathUnescape failed : URL.Path=%s, error=%s \n", r.URL.Path, err.Error())
-		return nil, errUnescape
+	defer a.req.Body.Close()
+	byteMd5, err := GetMD5FromNewAuthString(bodyContent, a.req.URL.Path, a.req.URL.RawQuery)
+	if err != nil {
+		return err
 	}
 
-	// Generate New Auth String prepare for MD5
-	strAuth := ""
-	if r.URL.RawQuery == "" {
-		strAuth = fmt.Sprintf("%s\n%s", strURLPathDecode, strCallbackBody)
-	} else {
-		strAuth = fmt.Sprintf("%s?%s\n%s", strURLPathDecode, r.URL.RawQuery, strCallbackBody)
+	publicKeyURLBase64 := a.req.Header.Get(PubKeyUrlHeader)
+	bytePublicKey, err := GetPublicKey(publicKeyURLBase64)
+	if err != nil {
+		return err
 	}
-	// fmt.Printf("NewlyConstructedAuthString={%s}\n", strAuth)
 
-	// Generate MD5 from the New Auth String
-	md5Ctx := md5.New()
-	md5Ctx.Write([]byte(strAuth))
-	byteMD5 = md5Ctx.Sum(nil)
+	strAuthorizationBase64 := a.req.Header.Get(AuthorizationHeader)
+	authorization, err := GetAuthorization(strAuthorizationBase64)
+	if err != nil {
+		return err
+	}
 
-	return byteMD5, nil
+	return VerifySignature(bytePublicKey, byteMd5, authorization)
 }
 
-func VerifySignatureByRequest(r *http.Request) (err error) {
-	var pk, md5Body, auth []byte
-	pk, err = GetPublicKey(r)
-	if err != nil {
-		return
-	}
-	md5Body, err = GetMD5FromNewAuthString(r)
-	if err != nil {
-		return
-	}
-	auth, err = GetAuthorization(r)
-	if err != nil {
-		return
-	}
-	err = VerifySignature(pk, md5Body, auth)
-	return
-}
-
-// VerifySignature
-// VerifySignature需要三个重要的数据信息来进行签名验证： 1>获取公钥PublicKey;  2>生成新的MD5鉴权串;  3>解码Request携带的鉴权串;
-// 1>获取公钥PublicKey : 从RequestHeader的"x-oss-pub-key-url"字段中获取 URL, 读取URL链接的包含的公钥内容， 进行解码解析， 将其作为rsa.VerifyPKCS1v15的入参。
-// 2>生成新的MD5鉴权串 : 把Request中的url中的path部分进行urldecode， 加上url的query部分， 再加上body， 组合之后进行MD5编码， 得到MD5鉴权字节串。
-// 3>解码Request携带的鉴权串 ： 获取RequestHeader的"authorization"字段， 对其进行Base64解码，作为签名验证的鉴权对比串。
-// rsa.VerifyPKCS1v15进行签名验证，返回验证结果。
 func VerifySignature(bytePublicKey []byte, byteMd5 []byte, authorization []byte) error {
 	pubBlock, _ := pem.Decode(bytePublicKey)
 	if pubBlock == nil {
@@ -186,4 +111,76 @@ func VerifySignature(bytePublicKey []byte, byteMd5 []byte, authorization []byte)
 
 	// fmt.Printf("\nSignature Verification is Successful. \n")
 	return nil
+}
+
+// GetPublicKey : Get PublicKey bytes from Request.URL
+func GetPublicKey(publicKeyURLBase64 string) ([]byte, error) {
+	var bytePublicKey []byte
+	publicKeyURL, err := base64.StdEncoding.DecodeString(publicKeyURLBase64)
+	if err != nil {
+		return nil, err
+	}
+	// fmt.Printf("publicKeyURL={%s}\n", publicKeyURL)
+
+	// get PublicKey Content from URL
+	responsePublicKeyURL, err := http.Get(string(publicKeyURL))
+	if err != nil {
+		// fmt.Printf("Get PublicKey Content from URL failed : %s \n", err.Error())
+		return nil, err
+	}
+	bytePublicKey, err = io.ReadAll(responsePublicKeyURL.Body)
+	if err != nil {
+		// fmt.Printf("Read PublicKey Content from URL failed : %s \n", err.Error())
+		return bytePublicKey, err
+	}
+	defer responsePublicKeyURL.Body.Close()
+
+	// fmt.Printf("publicKey={%s}\n", bytePublicKey)
+	return bytePublicKey, nil
+}
+
+// GetAuthorization : decode from Base64String
+func GetAuthorization(strAuthorizationBase64 string) ([]byte, error) {
+	var byteAuthorization []byte
+	var err error
+	// Get Authorization bytes : decode from Base64String
+	if strAuthorizationBase64 == "" {
+		//fmt.Println("Failed to get authorization field from request header. ")
+		return nil, errors.New("no authorization field in Request header")
+	}
+
+	byteAuthorization, err = base64.StdEncoding.DecodeString(strAuthorizationBase64)
+	if err != nil {
+		return nil, err
+	}
+	return byteAuthorization, nil
+}
+
+// GetMD5FromNewAuthString : Get MD5 bytes from Newly Constructed Authorization String.
+func GetMD5FromNewAuthString(bodyContent []byte, urlPath string, urlQuery string) ([]byte, error) {
+	var byteMD5 []byte
+	// Construct the New Auth String from URI+Query+Body
+	strCallbackBody := string(bodyContent)
+	// fmt.Printf("r.URL.RawPath={%s}, r.URL.Query()={%s}, strCallbackBody={%s}\n", r.URL.RawPath, r.URL.Query(), strCallbackBody)
+	strURLPathDecode, errUnescape := unescapePath(urlPath, encodePathSegment) //url.PathUnescape(r.URL.Path) for Golang v1.8.2+
+	if errUnescape != nil {
+		// fmt.Printf("url.PathUnescape failed : URL.Path=%s, error=%s \n", r.URL.Path, err.Error())
+		return nil, errUnescape
+	}
+
+	// Generate New Auth String prepare for MD5
+	strAuth := ""
+	if urlQuery == "" {
+		strAuth = fmt.Sprintf("%s\n%s", strURLPathDecode, strCallbackBody)
+	} else {
+		strAuth = fmt.Sprintf("%s?%s\n%s", strURLPathDecode, urlPath, strCallbackBody)
+	}
+	// fmt.Printf("NewlyConstructedAuthString={%s}\n", strAuth)
+
+	// Generate MD5 from the New Auth String
+	md5Ctx := md5.New()
+	md5Ctx.Write([]byte(strAuth))
+	byteMD5 = md5Ctx.Sum(nil)
+
+	return byteMD5, nil
 }
