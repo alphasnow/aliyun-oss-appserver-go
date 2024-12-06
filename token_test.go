@@ -12,6 +12,29 @@ func TestTokenGenerate(t *testing.T) {
 		AccessKeyId:     "yourAccessKeyId",
 		AccessKeySecret: "yourAccessKeySecret",
 		Host:            "https://bucket-name.oss-cn-hangzhou.aliyuncs.com",
+		ExpireSecond:    30,
+	})
+
+	targetTime, _ := time.Parse("2006-01-02 15:04:05", "2025-01-01 00:00:00")
+	policy := new(Policy)
+	policy.SetExpireTime(targetTime)
+
+	tokenPayload, _ := token.SetPolicy(policy).Generate()
+	tokenJson, _ := json.Marshal(tokenPayload)
+	tokenJsonStr := string(tokenJson)
+
+	expectTokenStr := `{"accessid":"yourAccessKeyId","host":"https://bucket-name.oss-cn-hangzhou.aliyuncs.com","expire":1735689600,"signature":"S7QSuk+DEd0QdMRZFhwv3yjuE6g=","policy":"eyJleHBpcmF0aW9uIjoiMjAyNS0wMS0wMVQwMDowMDowMFoiLCJjb25kaXRpb25zIjpudWxsfQ==","dir":"","callback":""}`
+	if tokenJsonStr != expectTokenStr {
+		t.Error("token error")
+	}
+}
+
+func TestTokenWithPolicyGenerate(t *testing.T) {
+
+	token := NewToken(&Config{
+		AccessKeyId:     "yourAccessKeyId",
+		AccessKeySecret: "yourAccessKeySecret",
+		Host:            "https://bucket-name.oss-cn-hangzhou.aliyuncs.com",
 		Directory:       "user-dir-prefix/",
 		ExpireSecond:    30,
 		CallbackUrl:     "http://88.88.88.88:8888",
@@ -33,5 +56,4 @@ func TestTokenGenerate(t *testing.T) {
 	if tokenJsonStr != expectTokenStr {
 		t.Error("token error")
 	}
-
 }
