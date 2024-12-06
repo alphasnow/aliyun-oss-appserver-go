@@ -105,13 +105,15 @@ type Config struct {
 	AccessKeyId     string `json:"access_key_id"`
 	AccessKeySecret string `json:"access_key_secret"`
 	Host            string `json:"host"`
+
 	// Callback
 	CallbackUrl string `json:"callback_url"`
 	// CallbackBody     string `json:"callback_body"`
 	// CallbackBodyType string `json:"callback_body_type"`
+
 	// Policy
-	Directory    string `json:"upload_dir"`
-	ExpireSecond int64  `json:"expire_time"`
+	Directory    string `json:"directory"`
+	ExpireSecond int64  `json:"expire_second"`
 }
 
 // Policy
