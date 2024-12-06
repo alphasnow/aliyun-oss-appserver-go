@@ -13,6 +13,7 @@ import (
 const TimeGMTISO8601 = "2006-01-02T15:04:05Z"
 const CallbackBodyParam = `{"bucket":${bucket},"object":${object},"etag":${etag},"size":${size},"mimeType":${mimeType},"imageInfo":{"height":${imageInfo.height},"width":${imageInfo.width},"format":${imageInfo.format}},"crc64":${crc64},"contentMd5":${contentMd5},"vpcId":${vpcId},"clientIp":${clientIp},"reqId":${reqId},"operation":${operation}}`
 const CallbackBodyTypeParam = "application/json"
+const DefaultExpireSecond = 600
 
 type Token struct {
 	config   *Config
@@ -33,7 +34,14 @@ func NewToken(config *Config) *Token {
 
 func newPolicy(config *Config) *Policy {
 	sp := new(Policy)
-	sp.SetExpireTime(time.Now().Add(time.Duration(config.ExpireSecond) * time.Second))
+	var expireSecond int64
+	if config.ExpireSecond != 0 {
+		expireSecond = config.ExpireSecond
+	} else {
+		expireSecond = DefaultExpireSecond
+	}
+	expireTime := time.Now().Add(time.Duration(expireSecond) * time.Second)
+	sp.SetExpireTime(expireTime)
 	if config.Directory != "" {
 		sp.SetDirectory(config.Directory)
 	}
@@ -43,8 +51,18 @@ func newPolicy(config *Config) *Policy {
 func newCallback(config *Config) *Callback {
 	cp := new(Callback)
 	cp.CallbackUrl = config.CallbackUrl
-	cp.CallbackBody = CallbackBodyParam
-	cp.CallbackBodyType = CallbackBodyTypeParam
+
+	if config.CallbackBody != "" {
+		cp.CallbackBody = config.CallbackUrl
+	} else {
+		cp.CallbackBody = CallbackBodyParam
+	}
+
+	if config.CallbackBodyType != "" {
+		cp.CallbackBodyType = config.CallbackBodyType
+	} else {
+		cp.CallbackBodyType = CallbackBodyTypeParam
+	}
 	return cp
 }
 
@@ -60,7 +78,7 @@ func (t *Token) SetCallback(callback *Callback) *Token {
 	return &k
 }
 
-func (t *Token) Generate() (*PolicyToken, error) {
+func (t *Token) Generate() (*SignatureToken, error) {
 	// policy
 	if t.policy == nil {
 		t.policy = newPolicy(t.config)
@@ -88,8 +106,8 @@ func (t *Token) Generate() (*PolicyToken, error) {
 	}
 
 	// token
-	var policyToken PolicyToken
-	policyToken.AccessKeyId = t.config.AccessKeyId
+	var policyToken SignatureToken
+	policyToken.OSSAccessKeyId = t.config.AccessKeyId
 	policyToken.Host = t.config.Host
 	policyToken.Directory = t.policy.GetDirectory()
 	policyToken.Expire = t.policy.GetExpire()
@@ -101,15 +119,15 @@ func (t *Token) Generate() (*PolicyToken, error) {
 }
 
 type Config struct {
-	// PolicyToken
+	// SignatureToken
 	AccessKeyId     string `json:"access_key_id"`
 	AccessKeySecret string `json:"access_key_secret"`
 	Host            string `json:"host"`
 
 	// Callback
-	CallbackUrl string `json:"callback_url"`
-	// CallbackBody     string `json:"callback_body"`
-	// CallbackBodyType string `json:"callback_body_type"`
+	CallbackUrl      string `json:"callback_url"`
+	CallbackBody     string `json:"callback_body"`
+	CallbackBodyType string `json:"callback_body_type"`
 
 	// Policy
 	Directory    string `json:"directory"`
@@ -165,14 +183,19 @@ func (c *Policy) SetContentType(types ...string) {
 	})
 }
 
-type PolicyToken struct {
-	AccessKeyId string `json:"accessid"`  // required
-	Host        string `json:"host"`      // optional
-	Expire      int64  `json:"expire"`    // optional
-	Signature   string `json:"signature"` // required
-	Policy      string `json:"policy"`    // required
-	Directory   string `json:"dir"`       // optional
-	Callback    string `json:"callback"`  // optional
+// SignatureToken
+// https://help.aliyun.com/zh/oss/developer-reference/postobject
+type SignatureToken struct {
+	// post object param
+	OSSAccessKeyId string `json:"OSSAccessKeyId"` // required
+	Policy         string `json:"policy"`         // required
+	Callback       string `json:"callback"`       // optional
+	Signature      string `json:"signature"`      // required
+	// api param
+	Host      string `json:"host"`      // optional
+	Expire    int64  `json:"expire"`    // optional
+	Directory string `json:"directory"` // optional
+
 }
 
 // Callback
@@ -181,4 +204,8 @@ type Callback struct {
 	CallbackUrl      string `json:"callbackUrl"`                // required
 	CallbackBody     string `json:"callbackBody"`               // optional
 	CallbackBodyType string `json:"callbackBodyType,omitempty"` // optional, default: application/x-www-form-urlencoded
+}
+
+func (c *Callback) isValid() bool {
+	return c.CallbackUrl != "" && c.CallbackBody != ""
 }
