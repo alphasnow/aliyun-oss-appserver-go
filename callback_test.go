@@ -2,7 +2,6 @@ package appserver
 
 import (
 	"github.com/jarcoal/httpmock"
-	"net/http"
 	"testing"
 )
 
@@ -14,10 +13,7 @@ func TestCallbackGetPublicKey(t *testing.T) {
 	httpmock.RegisterResponder("GET", "https://gosspublic.alicdn.com/callback_pub_key_v1.pem",
 		httpmock.NewStringResponder(200, pk))
 
-	req, _ := http.NewRequest(http.MethodPost, "/notify", nil)
-	req.Header.Set("x-oss-pub-key-url", "aHR0cHM6Ly9nb3NzcHVibGljLmFsaWNkbi5jb20vY2FsbGJhY2tfcHViX2tleV92MS5wZW0=")
-
-	resp, err := GetPublicKey(req)
+	resp, err := GetPublicKey("aHR0cHM6Ly9nb3NzcHVibGljLmFsaWNkbi5jb20vY2FsbGJhY2tfcHViX2tleV92MS5wZW0=")
 	if err != nil {
 		t.Error(err)
 	}

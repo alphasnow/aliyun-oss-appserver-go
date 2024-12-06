@@ -53,7 +53,7 @@ func newCallback(config *Config) *Callback {
 	cp.CallbackUrl = config.CallbackUrl
 
 	if config.CallbackBody != "" {
-		cp.CallbackBody = config.CallbackUrl
+		cp.CallbackBody = config.CallbackBody
 	} else {
 		cp.CallbackBody = CallbackBodyParam
 	}
@@ -96,7 +96,7 @@ func (t *Token) Generate() (*SignatureToken, error) {
 
 	// callback
 	var callback string
-	if t.callback.isValid() {
+	if t.callback != nil && t.callback.isValid() {
 		var callbackStr []byte
 		callbackStr, err = json.Marshal(t.callback)
 		if err != nil {
