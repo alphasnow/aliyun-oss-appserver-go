@@ -67,6 +67,7 @@ func GetPublicKey(r *http.Request) ([]byte, error) {
 		return nil, err
 	}
 	// fmt.Printf("publicKeyURL={%s}\n", publicKeyURL)
+
 	// get PublicKey Content from URL
 	responsePublicKeyURL, err := http.Get(string(publicKeyURL))
 	if err != nil {
@@ -79,6 +80,7 @@ func GetPublicKey(r *http.Request) ([]byte, error) {
 		return bytePublicKey, err
 	}
 	defer responsePublicKeyURL.Body.Close()
+
 	// fmt.Printf("publicKey={%s}\n", bytePublicKey)
 	return bytePublicKey, nil
 }
@@ -86,13 +88,15 @@ func GetPublicKey(r *http.Request) ([]byte, error) {
 // GetAuthorization : decode from Base64String
 func GetAuthorization(r *http.Request) ([]byte, error) {
 	var byteAuthorization []byte
+	var err error
 	// Get Authorization bytes : decode from Base64String
 	strAuthorizationBase64 := r.Header.Get(AuthorizationHeader)
 	if strAuthorizationBase64 == "" {
 		//fmt.Println("Failed to get authorization field from request header. ")
 		return nil, errors.New("no authorization field in Request header")
 	}
-	byteAuthorization, err := base64.StdEncoding.DecodeString(strAuthorizationBase64)
+
+	byteAuthorization, err = base64.StdEncoding.DecodeString(strAuthorizationBase64)
 	if err != nil {
 		return nil, err
 	}
