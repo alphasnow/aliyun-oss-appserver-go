@@ -2,6 +2,8 @@ package appserver
 
 import (
 	"encoding/json"
+	"fmt"
+	"sync"
 	"testing"
 	"time"
 )
@@ -91,4 +93,32 @@ func TestTokenWithPolicyGenerate(t *testing.T) {
 	if tokenJsonStr != expectTokenStr {
 		t.Error("token error")
 	}
+}
+
+func TestTokenPolicy(t *testing.T) {
+
+	token := NewToken(&Config{
+		AccessKeyId:     "yourAccessKeyId",
+		AccessKeySecret: "yourAccessKeySecret",
+		Host:            "https://bucket-name.oss-cn-hangzhou.aliyuncs.com",
+		Directory:       "user-dir-prefix/",
+		ExpireSecond:    600,
+		CallbackUrl:     "http://domain.com/oss/callback",
+	})
+
+	g := sync.WaitGroup{}
+	for i := 0; i < 10; i++ {
+		g.Add(1)
+		go func(idx int) {
+			defer g.Done()
+			dir := fmt.Sprintf("user-%d-prefix/", idx)
+			policy := new(Policy)
+			policy.SetDirectory(dir)
+			tokenPayload, _ := token.SetPolicy(policy).Generate()
+			if tokenPayload.Directory != dir {
+				t.Error("dir error", dir)
+			}
+		}(i)
+	}
+	g.Wait()
 }

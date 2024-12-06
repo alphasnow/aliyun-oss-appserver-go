@@ -80,40 +80,43 @@ func (t *Token) SetCallback(callback *Callback) *Token {
 
 func (t *Token) Generate() (*SignatureToken, error) {
 	// policy
-	if t.policy == nil {
-		t.policy = newPolicy(t.config)
+	var policy *Policy
+	if t.policy != nil {
+		policy = t.policy
+	} else {
+		policy = newPolicy(t.config)
 	}
-	policyByte, err := json.Marshal(t.policy)
-	policy := base64.StdEncoding.EncodeToString(policyByte)
+	policyByte, err := json.Marshal(policy)
+	policyBas64 := base64.StdEncoding.EncodeToString(policyByte)
 
 	// signature
 	h := hmac.New(func() hash.Hash { return sha1.New() }, []byte(t.config.AccessKeySecret))
-	_, err = io.WriteString(h, policy)
+	_, err = io.WriteString(h, policyBas64)
 	if err != nil {
 		return nil, err
 	}
-	signature := base64.StdEncoding.EncodeToString(h.Sum(nil))
+	signatureBase64 := base64.StdEncoding.EncodeToString(h.Sum(nil))
 
 	// callback
-	var callback string
+	var callbackBase64 string
 	if t.callback != nil && t.callback.isValid() {
 		var callbackStr []byte
 		callbackStr, err = json.Marshal(t.callback)
 		if err != nil {
 			return nil, err
 		}
-		callback = base64.StdEncoding.EncodeToString(callbackStr)
+		callbackBase64 = base64.StdEncoding.EncodeToString(callbackStr)
 	}
 
 	// token
 	var policyToken SignatureToken
 	policyToken.OSSAccessKeyId = t.config.AccessKeyId
 	policyToken.Host = t.config.Host
-	policyToken.Directory = t.policy.GetDirectory()
-	policyToken.Expire = t.policy.GetExpire()
-	policyToken.Signature = signature
-	policyToken.Policy = policy
-	policyToken.Callback = callback
+	policyToken.Directory = policy.GetDirectory()
+	policyToken.Expire = policy.GetExpire()
+	policyToken.Signature = signatureBase64
+	policyToken.Policy = policyBas64
+	policyToken.Callback = callbackBase64
 
 	return &policyToken, nil
 }
