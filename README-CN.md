@@ -11,7 +11,7 @@ go get -u github.com/alphasnow/aliyun-oss-appserver-go
 ## 示例
 ### 生成授权 
 ```go
-token := appserver.NewToken(&Config{
+token := appserver.NewToken(&appserver.Config{
     AccessKeyId:     "yourAccessKeyId",
     AccessKeySecret: "yourAccessKeySecret",
     Host:            "https://bucket-name.oss-cn-hangzhou.aliyuncs.com",
