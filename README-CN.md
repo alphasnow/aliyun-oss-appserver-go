@@ -1,15 +1,15 @@
-English | [简体中文](README-CN.md)  
+[English](README.md) | 简体中文  
 
 # aliyun-oss-appserver-go
-Upload data to OSS through Web applications. Add signatures on the server, configure upload callback, and directly transfer data.
+通过Web端上传数据到OSS. 服务端签名直传并设置上传回调.
 
-## Installation
+## 安装
 ```shell
 go get -u github.com/alphasnow/aliyun-oss-appserver-go
 ```
 
-## Usage
-### Token generate 
+## 示例
+### 生成授权 
 ```go
 token := appserver.NewToken(&Config{
     AccessKeyId:     "yourAccessKeyId",
@@ -17,7 +17,7 @@ token := appserver.NewToken(&Config{
     Host:            "https://bucket-name.oss-cn-hangzhou.aliyuncs.com",
     Directory:       "user-dir-prefix/",
     ExpireSecond:    600,
-    // Only the PutObject, PostObject, and CompleteMultipartUpload support Callback
+    // 回调只支持 PutObject, PostObject, CompleteMultipartUpload
     CallbackUrl:     "http://domain.com/oss/callback", 
 })
 postToken, _ := token.Generate()
@@ -32,7 +32,7 @@ postTokenJson, _ := json.Marshal(postToken)
 //    "directory": "user-dir-prefix/"
 //}
 ```
-## Upload file
+## 上传文件
 ```bash
 curl --location "https://bucket-name.oss-cn-hangzhou.aliyuncs.com" \
 --form 'key="user-dir-prefix/${filename}"' \
@@ -42,7 +42,7 @@ curl --location "https://bucket-name.oss-cn-hangzhou.aliyuncs.com" \
 --form 'signature="uXL82wU5IGCd7vcZKX9gua5TUJs="' \
 --form 'file=@"~/Downloads/image.jpg"'
 ```
-## Callback verify
+## 回调验证
 ```go
 aliyunOSSCallback := appserver.NewAliyunOSSCallback(request)
 callbackBody,err := aliyunOSSCallback.VerifySignature()
@@ -66,7 +66,7 @@ callbackBody,err := aliyunOSSCallback.VerifySignature()
 //}
 ```
 
-## Reference
+## 参考
 - reference code 
 [aliyun-oss-appserver-go-master.zip](https://help-static-aliyun-doc.aliyuncs.com/file-manage-files/zh-CN/20240710/zbucef/aliyun-oss-appserver-go-master.zip)
 - reference doc [https://www.alibabacloud.com/help/en/oss/use-cases/go-1](https://www.alibabacloud.com/help/en/oss/use-cases/go-1)
