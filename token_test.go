@@ -122,3 +122,12 @@ func TestTokenPolicy(t *testing.T) {
 	}
 	g.Wait()
 }
+
+func TestCallback(t *testing.T) {
+	t.Run("empty callback url", func(t *testing.T) {
+		cb := Callback{CallbackUrl: "", CallbackBody: CallbackBodyParam}
+		if err := cb.Validate(); err == nil {
+			t.Error("callback validate fail")
+		}
+	})
+}
