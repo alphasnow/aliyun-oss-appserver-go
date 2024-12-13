@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/json"
+	"fmt"
 	"hash"
 	"io"
 	"time"
@@ -87,6 +88,9 @@ func (t *Token) Generate() (*SignatureToken, error) {
 		policy = newPolicy(t.config)
 	}
 	policyByte, err := json.Marshal(policy)
+	if err != nil {
+		return nil, err
+	}
 	policyBas64 := base64.StdEncoding.EncodeToString(policyByte)
 
 	// signature
@@ -99,7 +103,7 @@ func (t *Token) Generate() (*SignatureToken, error) {
 
 	// callback
 	var callbackBase64 string
-	if t.callback != nil && t.callback.isValid() {
+	if t.callback != nil && t.callback.Validate() == nil {
 		var callbackStr []byte
 		callbackStr, err = json.Marshal(t.callback)
 		if err != nil {
@@ -135,6 +139,19 @@ type Config struct {
 	// Policy
 	Directory    string `json:"directory"`
 	ExpireSecond int64  `json:"expire_second"`
+}
+
+func (c *Config) Validate() error {
+	if c.AccessKeyId == "" {
+		return fmt.Errorf("missing required config access_key_id")
+	}
+	if c.AccessKeySecret == "" {
+		return fmt.Errorf("missing required config access_key_secret")
+	}
+	if c.Host == "" {
+		return fmt.Errorf("missing required config host")
+	}
+	return nil
 }
 
 // Policy
@@ -209,6 +226,12 @@ type Callback struct {
 	CallbackBodyType string `json:"callbackBodyType,omitempty"` // optional, default: application/x-www-form-urlencoded
 }
 
-func (c *Callback) isValid() bool {
-	return c.CallbackUrl != "" && c.CallbackBody != ""
+func (c *Callback) Validate() error {
+	if c.CallbackUrl == "" {
+		return fmt.Errorf("missing required CallbackUrl")
+	}
+	if c.CallbackBody == "" {
+		return fmt.Errorf("missing required CallbackBody")
+	}
+	return nil
 }

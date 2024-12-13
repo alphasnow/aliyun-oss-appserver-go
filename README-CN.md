@@ -67,6 +67,6 @@ callbackBody,err := aliyunOSSCallback.VerifySignature()
 ```
 
 ## 参考
-- reference code 
+- 参考代码 
 [aliyun-oss-appserver-go-master.zip](https://help-static-aliyun-doc.aliyuncs.com/file-manage-files/zh-CN/20240710/zbucef/aliyun-oss-appserver-go-master.zip)
-- reference doc [https://www.alibabacloud.com/help/en/oss/use-cases/go-1](https://www.alibabacloud.com/help/en/oss/use-cases/go-1)
+- 参考文档 [https://www.alibabacloud.com/help/en/oss/use-cases/go-1](https://www.alibabacloud.com/help/en/oss/use-cases/go-1)
