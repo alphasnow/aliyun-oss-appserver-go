@@ -191,7 +191,7 @@ func (c *Policy) SetBucket(bucket string) {
 	})
 }
 
-func (c *Policy) SetContentLengthRange(min uint64, max uint64) {
+func (c *Policy) SetContentLengthRange(min int, max int) {
 	c.Conditions = append(c.Conditions, []any{
 		"content-length-range", min, max,
 	})
