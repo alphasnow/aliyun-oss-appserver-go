@@ -23,13 +23,13 @@ type CallbackBody struct {
 	// Etag是文件的ETag，即返回给用户的ETag字段
 	Etag string `json:"etag"`
 	// Size代表Object大小，调用CompleteMultipartUpload时，size为整个Object的大小
-	Size uint32 `json:"size"`
+	Size int `json:"size"`
 	// MimeType代表资源类型，例如jpeg图片的资源类型为image/jpeg
 	MimeType string `json:"mimeType"`
 	// ImageInfo用于存储图片相关的额外信息，仅适用于图片格式
 	ImageInfo ImageInfo `json:"imageInfo"`
 	// Crc64与上传文件后返回的x-oss-hash-crc64ecma头内容一致
-	Crc64 uint64 `json:"crc64"`
+	Crc64 int `json:"crc64"`
 	// ContentMd5与上传文件后返回的Content-MD5头内容一致，仅在调用PutObject和PostObject接口上传文件时，该变量的值不为空
 	ContentMd5 string `json:"contentMd5"`
 	// VpcId发起请求的客户端所在的VpcId，如果不是通过VPC发起请求，则该变量的值为空
@@ -44,9 +44,9 @@ type CallbackBody struct {
 
 type ImageInfo struct {
 	// Height是图片高度，对于非图片格式，该变量的值为空
-	Height uint32 `json:"height"`
+	Height int `json:"height"`
 	// Width是图片宽度，对于非图片格式，该变量的值为空
-	Width uint32 `json:"width"`
+	Width int `json:"width"`
 	// Format是图片格式，例如JPG、PNG等，对于非图片格式，该变量的值为空
 	Format string `json:"format"`
 }
