@@ -1,15 +1,21 @@
-[English](README.md) | 简体中文  
+[English](README.md) | 简体中文
 
 # aliyun-oss-appserver-go
-通过Web端上传数据到OSS. 服务端签名直传并设置上传回调.
+
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/alphasnow/aliyun-oss-appserver-go)
+
+通过 Web 端上传数据到 OSS. 服务端签名直传并设置上传回调.
 
 ## 安装
+
 ```shell
 go get -u github.com/alphasnow/aliyun-oss-appserver-go
 ```
 
 ## 示例
-### 生成授权 
+
+### 生成授权
+
 ```go
 token := appserver.NewToken(&appserver.Config{
     AccessKeyId:     "yourAccessKeyId",
@@ -18,7 +24,7 @@ token := appserver.NewToken(&appserver.Config{
     Directory:       "user-dir-prefix/",
     ExpireSecond:    600,
     // 回调只支持 PutObject, PostObject, CompleteMultipartUpload
-    CallbackUrl:     "http://domain.com/oss/callback", 
+    CallbackUrl:     "http://domain.com/oss/callback",
 })
 postToken, _ := token.Generate()
 postTokenJson, _ := json.Marshal(postToken)
@@ -32,7 +38,9 @@ postTokenJson, _ := json.Marshal(postToken)
 //    "directory": "user-dir-prefix/"
 //}
 ```
+
 ## 上传文件
+
 ```bash
 curl --location "https://bucket-name.oss-cn-hangzhou.aliyuncs.com" \
 --form 'key="user-dir-prefix/${filename}"' \
@@ -42,7 +50,9 @@ curl --location "https://bucket-name.oss-cn-hangzhou.aliyuncs.com" \
 --form 'signature="uXL82wU5IGCd7vcZKX9gua5TUJs="' \
 --form 'file=@"~/Downloads/image.jpg"'
 ```
+
 ## 回调验证
+
 ```go
 aliyunOSSCallback := appserver.NewAliyunOSSCallback(request)
 callbackBody,err := aliyunOSSCallback.VerifySignature()
@@ -67,6 +77,6 @@ callbackBody,err := aliyunOSSCallback.VerifySignature()
 ```
 
 ## 参考
-- 参考代码 
-[aliyun-oss-appserver-go-master.zip](https://help-static-aliyun-doc.aliyuncs.com/file-manage-files/zh-CN/20240710/zbucef/aliyun-oss-appserver-go-master.zip)
+
+- 参考代码 [aliyun-oss-appserver-go-master.zip](https://help-static-aliyun-doc.aliyuncs.com/file-manage-files/zh-CN/20240710/zbucef/aliyun-oss-appserver-go-master.zip)
 - 参考文档 [https://www.alibabacloud.com/help/en/oss/use-cases/go-1](https://www.alibabacloud.com/help/en/oss/use-cases/go-1)
