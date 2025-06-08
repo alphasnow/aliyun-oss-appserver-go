@@ -29,11 +29,11 @@ type CallbackBody struct {
 	// ImageInfo用于存储图片相关的额外信息，仅适用于图片格式
 	ImageInfo ImageInfo `json:"imageInfo"`
 	// Crc64与上传文件后返回的x-oss-hash-crc64ecma头内容一致
-	Crc64 int `json:"crc64"`
+	Crc64 uint `json:"crc64"`
 	// ContentMd5与上传文件后返回的Content-MD5头内容一致，仅在调用PutObject和PostObject接口上传文件时，该变量的值不为空
 	ContentMd5 string `json:"contentMd5"`
 	// VpcId发起请求的客户端所在的VpcId，如果不是通过VPC发起请求，则该变量的值为空
-	VpcId string `json:"vpcId"`
+	VpcId *string `json:"vpcId"`
 	// ClientIp发起请求的客户端IP地址
 	ClientIp string `json:"clientIp"`
 	// ReqId发起请求的RequestId
